@@ -2,6 +2,7 @@ import grpc from "@grpc/grpc-js";
 import protoLoader from "@grpc/proto-loader";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { GreeterService, HelloReply, HelloRequest } from "./proto/interface";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -9,15 +10,22 @@ const __dirname = dirname(__filename);
 const PROTO_PATH = join(__dirname, "proto", "hello.proto");
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
-  longs: true,
   enums: String,
   defaults: true,
   oneofs: true,
 });
 
-const helloProto = grpc.loadPackageDefinition(packageDefinition).hello;
+const helloProto = grpc.loadPackageDefinition(packageDefinition)
+  .hello as grpc.GrpcObject & {
+  Greeter: {
+    service: grpc.ServiceDefinition<GreeterService>;
+  };
+};
 
-function sayHello(call, callback) {
+function sayHello(
+  call: grpc.ServerUnaryCall<HelloRequest, HelloReply>,
+  callback: grpc.sendUnaryData<HelloReply>
+): void {
   const responseMessage = `Hello, ${call.request.name}!`;
   callback(null, { message: responseMessage });
 }
